@@ -4013,16 +4013,17 @@ Complex.IM = $C(0, 1);
 $jit.Graph = new Class({
 
   initialize: function(opt, Node, Edge, Label) {
-    var innerOptions = {
-    'klass': Complex,
-    'Node': {}
-    };
-    this.Node = Node;
-    this.Edge = Edge;
-    this.Label = Label;
-    this.opt = $.merge(innerOptions, opt || {});
-    this.nodes = {};
-    this.edges = {};
+      var innerOptions = {
+	  'klass': Complex,
+	  'Node': {}
+      };
+      this.Node = Node;
+      this.Edge = Edge;
+      this.Label = Label;
+      this.opt = $.merge(innerOptions, opt || {});
+      this.nodes = {};
+      this.edges = {};
+      this.roots = {};
     
     //add nodeList methods
     var that = this;
@@ -5018,26 +5019,47 @@ Graph.Util = {
 
     */
     computeLevels: function(graph, id, startDepth, flags) {
+	var that = this;
         startDepth = startDepth || 0;
         var filter = this.filter(flags);
+	var uncomputed = {};
+	//Reinicio raices Falta reinicio adjacencias especiales
+	this.roots = {};
         this.eachNode(graph, function(elem) {
             elem._flag = false;
             elem._depth = -1;
+	    uncomputed[elem.id] = elem;
         }, flags);
         var root = graph.getNode(id);
         root._depth = startDepth;
         var queue = [root];
-        while(queue.length != 0) {
-            var node = queue.pop();
-            node._flag = true;
-            this.eachAdjacency(node, function(adj) {
-                var n = adj.nodeTo;
-                if(n._flag == false && filter(n) && !adj._hiding) {
-                    if(n._depth < 0) n._depth = node._depth + 1 + startDepth;
-                    queue.unshift(n);
-                }
-            }, flags);
-        }
+	this.roots[root.id] = root;
+	while(Object.keys(uncomputed).length != 0){
+            while(queue.length != 0) {
+		var node = queue.pop();
+		delete uncomputed[node.id];
+		node._flag = true;
+		this.eachAdjacency(node, function(adj) {
+                    var n = adj.nodeTo;
+                    if(n._flag == false && filter(n) && !adj._hiding) {
+			if(n._depth < 0){
+			    n._depth = node._depth + 1 + startDepth;
+			    console.log("Node to queue "+n.id+":"+n._depth);
+			}
+			queue.unshift(n);
+			
+                    }
+		}, flags);
+            }
+	    if(Object.keys(uncomputed).length != 0){
+		var newroot = uncomputed[Object.keys(uncomputed).pop()];		
+		this.roots[newroot.id] = newroot;
+		graph.addAdjacence(root, newroot, {_hiding: true, _rootsAdj: true});
+		queue.unshift(newroot);
+		newroot._depth = root._depth + 1;
+		console.log("Newroot "+newroot.id+":"+newroot._depth);
+	    }
+	}
     },
 
     /*
@@ -5385,6 +5407,7 @@ $.each(['eachAdjacency', 'eachLevel', 'eachSubgraph', 'eachSubnode', 'anySubnode
     return Graph.Util[m].apply(Graph.Util, [this].concat(Array.prototype.slice.call(arguments)));
   };
 });
+
 
 /*
  * File: Graph.Op.js
