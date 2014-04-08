@@ -1044,11 +1044,18 @@ Graph.Util = {
 
     */
     computeLevels: function(graph, id, startDepth, flags) {
-	var that = this;
+
+	var isEmptyObject = function (e){var t;for(t in e)return!1;return!0};
         startDepth = startDepth || 0;
         var filter = this.filter(flags);
 	var uncomputed = {};
 	//Reinicio raices Falta reinicio adjacencias especiales
+	if(!isEmptyObject(this.roots)){
+	    this.eachAdjacency(this.roots[this.roots["superRoot"]], function(adj){
+		if(adj._rootsAdj)
+		    graph.removeAdjacence(adj.nodeFrom, adj.nodeTo);
+	    });
+	}
 	this.roots = {};
         this.eachNode(graph, function(elem) {
             elem._flag = false;
@@ -1057,9 +1064,10 @@ Graph.Util = {
         }, flags);
         var root = graph.getNode(id);
         root._depth = startDepth;
-        var queue = [root];
+	var queue = [root];
 	this.roots[root.id] = root;
-	while(Object.keys(uncomputed).length != 0){
+	this.roots["superRoot"] = root.id;
+	while(!isEmptyObject(uncomputed)){
             while(queue.length != 0) {
 		var node = queue.pop();
 		delete uncomputed[node.id];
@@ -1076,10 +1084,10 @@ Graph.Util = {
                     }
 		}, flags);
             }
-	    if(Object.keys(uncomputed).length != 0){
+	    if(!isEmptyObject(uncomputed)){
 		var newroot = uncomputed[Object.keys(uncomputed).pop()];		
 		this.roots[newroot.id] = newroot;
-		graph.addAdjacence(root, newroot, {_hiding: true, _rootsAdj: true});
+		graph.addAdjacence(root, newroot, {_hiding: true, _rootsAdj: true, $alpha: 0});
 		queue.unshift(newroot);
 		newroot._depth = root._depth + 1;
 		console.log("Newroot "+newroot.id+":"+newroot._depth);
