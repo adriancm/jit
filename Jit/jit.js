@@ -5020,54 +5020,54 @@ Graph.Util = {
     */
     computeLevels: function(graph, id, startDepth, flags) {
 
-	var isEmptyObject = function (e){var t;for(t in e)return!1;return!0};
+        var isEmptyObject = function (e){var t;for(t in e)return!1;return!0};
         startDepth = startDepth || 0;
         var filter = this.filter(flags);
-	var uncomputed = {};
-	//Reinicio raices Falta reinicio adjacencias especiales
-	if(!isEmptyObject(this.roots)){
-	    this.eachAdjacency(this.roots[this.roots["superRoot"]], function(adj){
-		if(adj._rootsAdj)
-		    graph.removeAdjacence(adj.nodeFrom, adj.nodeTo);
-	    });
-	}
-	this.roots = {};
+        var uncomputed = {};
+        //TODO Reinicio raices Falta reinicio adjacencias especiales
+        /*if(!isEmptyObject(this.roots)){
+            this.eachAdjacency(this.roots[this.roots["superRoot"]], function(adj){
+                if(adj._rootsAdj)
+                    graph.removeAdjacence(adj.nodeFrom, adj.nodeTo);
+            });
+        }
+        this.roots = {};*/
         this.eachNode(graph, function(elem) {
             elem._flag = false;
             elem._depth = -1;
-	    uncomputed[elem.id] = elem;
+            uncomputed[elem.id] = elem;
         }, flags);
         var root = graph.getNode(id);
         root._depth = startDepth;
-	var queue = [root];
-	this.roots[root.id] = root;
-	this.roots["superRoot"] = root.id;
-	while(!isEmptyObject(uncomputed)){
+        var queue = [root];
+        //this.roots[root.id] = root;
+        //this.roots["superRoot"] = root.id;
+        while(!isEmptyObject(uncomputed)){
             while(queue.length != 0) {
-		var node = queue.pop();
-		delete uncomputed[node.id];
-		node._flag = true;
-		this.eachAdjacency(node, function(adj) {
+                var node = queue.pop();
+                delete uncomputed[node.id];
+                node._flag = true;
+                this.eachAdjacency(node, function(adj) {
                     var n = adj.nodeTo;
                     if(n._flag == false && filter(n) && !adj._hiding) {
-			if(n._depth < 0){
-			    n._depth = node._depth + 1 + startDepth;
-			    console.log("Node to queue "+n.id+":"+n._depth);
-			}
-			queue.unshift(n);
-			
+                        if(n._depth < 0){
+                            n._depth = node._depth + 1 + startDepth;
+                            console.log("Node to queue "+n.id+":"+n._depth);
+                        }
+                        queue.unshift(n);
+
                     }
-		}, flags);
+                }, flags);
             }
-	    if(!isEmptyObject(uncomputed)){
-		var newroot = uncomputed[Object.keys(uncomputed).pop()];		
-		this.roots[newroot.id] = newroot;
-		graph.addAdjacence(root, newroot, {_hiding: true, _rootsAdj: true, $alpha: 0});
-		queue.unshift(newroot);
-		newroot._depth = root._depth + 1;
-		console.log("Newroot "+newroot.id+":"+newroot._depth);
-	    }
-	}
+            /*if(!isEmptyObject(uncomputed)){
+                var newroot = uncomputed[Object.keys(uncomputed).pop()];
+                this.roots[newroot.id] = newroot;
+                graph.addAdjacence(root, newroot, {/*_hiding: true, _rootsAdj: true, $alpha: 0});
+                queue.unshift(newroot);
+                newroot._depth = root._depth + 1;
+                console.log("Newroot "+newroot.id+":"+newroot._depth);
+            }*/
+        }
     },
 
     /*
@@ -8594,7 +8594,7 @@ Layouts.Tree = (function() {
 
     var siblingOffset = config.siblingOffset;
     var subtreeOffset = config.subtreeOffset;
-    var align = config.align;
+    var align = node.getData('align') || config.align;
 
     function $design(node, maxsize, acum) {
       var sval = node.getData(s, prop);
@@ -8645,7 +8645,6 @@ Layouts.Tree = (function() {
     $design(node, false, 0);
   }
 
-
   return new Class({
     /*
     Method: compute
@@ -8672,7 +8671,7 @@ Layouts.Tree = (function() {
     computePositions : function(node, prop) {
       var config = this.config;
       var multitree = config.multitree;
-      var align = config.align;
+      var align = node.getData('align') || config.align;
       var indent = align !== 'center' && config.indent;
       var orn = config.orientation;
       var orns = multitree ? [ 'top', 'right', 'bottom', 'left' ] : [ orn ];
@@ -9705,41 +9704,43 @@ $jit.ST.Geom = new Class({
           };
         };
         var dim = this.node;
+        var align = node.getData('align') || dim.align;
         var w = node.getData('width');
         var h = node.getData('height');
 
         if(type == 'begin') {
-            if(dim.align == "center") {
+            if(align == "center") {
                 return this.dispatch(s, $C(0, h/2), $C(-w/2, 0),
                                      $C(0, -h/2),$C(w/2, 0));
-            } else if(dim.align == "left") {
+            } else if(align == "left") {
                 return this.dispatch(s, $C(0, h), $C(0, 0),
                                      $C(0, 0), $C(w, 0));
-            } else if(dim.align == "right") {
+            } else if(align == "right") {
                 return this.dispatch(s, $C(0, 0), $C(-w, 0),
                                      $C(0, -h),$C(0, 0));
             } else throw "align: not implemented";
 
 
         } else if(type == 'end') {
-            if(dim.align == "center") {
+            if(align == "center") {
                 return this.dispatch(s, $C(0, -h/2), $C(w/2, 0),
                                      $C(0, h/2),  $C(-w/2, 0));
-            } else if(dim.align == "left") {
+            } else if(align == "left") {
                 return this.dispatch(s, $C(0, 0), $C(w, 0),
                                      $C(0, h), $C(0, 0));
-            } else if(dim.align == "right") {
+            } else if(align == "right") {
                 return this.dispatch(s, $C(0, -h),$C(0, 0),
                                      $C(0, 0), $C(-w, 0));
             } else throw "align: not implemented";
         }
     },
-
+    
     /*
        Adjusts the tree position due to canvas scaling or translation.
     */
     getScaledTreePosition: function(node, scale) {
         var dim = this.node;
+        var align = node.getData('align') || dim.align;
         var w = node.getData('width');
         var h = node.getData('height');
         var s = (this.config.multitree
@@ -9751,13 +9752,13 @@ $jit.ST.Geom = new Class({
             return node.pos.add(new Complex(a, b)).$scale(1 - scale);
           };
         };
-        if(dim.align == "left") {
+        if(align == "left") {
             return this.dispatch(s, $C(0, h), $C(0, 0),
                                  $C(0, 0), $C(w, 0));
-        } else if(dim.align == "center") {
+        } else if(align == "center") {
             return this.dispatch(s, $C(0, h / 2), $C(-w / 2, 0),
                                  $C(0, -h / 2),$C(w / 2, 0));
-        } else if(dim.align == "right") {
+        } else if(align == "right") {
             return this.dispatch(s, $C(0, 0), $C(-w, 0),
                                  $C(0, -h),$C(0, 0));
         } else throw "align: not implemented";
@@ -9960,6 +9961,7 @@ $jit.ST.Label.DOM = new Class({
         var pos = node.pos.getc(true),
             config = this.viz.config,
             dim = config.Node,
+            align = node.getData('align') || dim.align,
             canvas = this.viz.canvas,
             w = node.getData('width'),
             h = node.getData('height'),
@@ -9973,12 +9975,12 @@ $jit.ST.Label.DOM = new Class({
             posx = pos.x * sx + ox,
             posy = pos.y * sy + oy;
 
-        if(dim.align == "center") {
+        if(align == "center") {
             labelPos= {
                 x: Math.round(posx - w / 2 + radius.width/2),
                 y: Math.round(posy - h / 2 + radius.height/2)
             };
-        } else if (dim.align == "left") {
+        } else if (align == "left") {
             orn = config.orientation;
             if(orn == "bottom" || orn == "top") {
                 labelPos= {
@@ -9991,7 +9993,7 @@ $jit.ST.Label.DOM = new Class({
                     y: Math.round(posy - h / 2 + radius.height/2)
                 };
             }
-        } else if(dim.align == "right") {
+        } else if(align == "right") {
             orn = config.orientation;
             if(orn == "bottom" || orn == "top") {
                 labelPos= {
