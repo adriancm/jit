@@ -5026,10 +5026,13 @@ Graph.Util = {
         var uncomputed = {};
         //TODO Reinicio raices Falta reinicio adjacencias especiales
         if(!isEmptyObject(this.roots)){
-            this.eachAdjacency(this.roots[this.roots["superRoot"]], function(adj){
-                if(adj.getData('_rootsAdj'))
-                    graph.removeAdjacence(adj.nodeFrom.id, adj.nodeTo.id);
-            });
+            var n = graph.getNode(this.roots['superRoot']);
+            if(n){
+                this.eachAdjacency(n, function(adj){
+                    if(adj.getData('_rootsAdj'))
+                        graph.removeAdjacence(adj.nodeFrom.id, adj.nodeTo.id);
+                });
+            }
         }
         this.roots = {};
         this.eachNode(graph, function(elem) {
